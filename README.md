@@ -1,4 +1,4 @@
-# node-red-cep-search
+# node-red-corretoras-cep-search
 Implementação de tratamento de dados de api, como listar corretoras e buscador de cep.
 
 Passo a Passo: Instalando e Executando no Node-RED

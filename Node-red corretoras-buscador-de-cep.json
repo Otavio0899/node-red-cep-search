@@ -1,0 +1,381 @@
+[
+    {
+        "id": "a1f3403b5f06f26e",
+        "type": "tab",
+        "label": "Fluxo 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "3e9af0becd320233",
+        "type": "tab",
+        "label": "CEP Searcher",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "tab_test_api",
+        "type": "tab",
+        "label": "Test API",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "1",
+        "type": "http in",
+        "z": "a1f3403b5f06f26e",
+        "name": "GET /corretoras",
+        "url": "/corretoras",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 260,
+        "y": 220,
+        "wires": [
+            [
+                "2"
+            ]
+        ]
+    },
+    {
+        "id": "2",
+        "type": "http request",
+        "z": "a1f3403b5f06f26e",
+        "name": "Fetch Corretoras",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://brasilapi.com.br/api/cvm/corretoras/v1",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 480,
+        "y": 220,
+        "wires": [
+            [
+                "3",
+                "4"
+            ]
+        ]
+    },
+    {
+        "id": "3",
+        "type": "debug",
+        "z": "a1f3403b5f06f26e",
+        "name": "Debug HTTP Request",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 680,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "4",
+        "type": "function",
+        "z": "a1f3403b5f06f26e",
+        "name": "Processar Corretoras",
+        "func": "// Verifica se a resposta é um array\nif (Array.isArray(msg.payload)) {\n    // Mapeia cada corretora para o formato desejado\n    const corretorasFormatadas = msg.payload.map(corretora => {\n        return `${corretora.nome_comercial} - ${corretora.municipio} / ${corretora.cnpj}`;\n    });\n    // Cria uma lista HTML\n    let listaHTML = '<ul>';\n    corretorasFormatadas.forEach(item => {\n        listaHTML += `<li>${item}</li>`;\n    });\n    listaHTML += '</ul>';\n    // Define o payload para o template\n    msg.payload = `\n        <!DOCTYPE html>\n        <html>\n        <head>\n            <title>Catálogo de Corretoras</title>\n            <style>\n                body { font-family: Arial, sans-serif; margin: 20px; }\n                h1 { color: #333; }\n                ul { list-style-type: none; padding: 0; }\n                li { background: #f4f4f4; margin: 5px 0; padding: 10px; border-radius: 4px; }\n            </style>\n        </head>\n        <body>\n            <h1>Catálogo de Corretoras</h1>\n            ${listaHTML}\n        </body>\n        </html>\n    `;\n} else {\n    // Em caso de erro, retorna uma mensagem\n    msg.payload = `\n        <!DOCTYPE html>\n        <html>\n        <head>\n            <title>Erro</title>\n        </head>\n        <body>\n            <h1>Não foi possível obter as corretoras.</h1>\n        </body>\n        </html>\n    `;\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 680,
+        "y": 240,
+        "wires": [
+            [
+                "5"
+            ]
+        ]
+    },
+    {
+        "id": "5",
+        "type": "http response",
+        "z": "a1f3403b5f06f26e",
+        "name": "HTTP Response",
+        "statusCode": "",
+        "headers": {},
+        "x": 880,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "9f750d2ec0996ccd",
+        "type": "http in",
+        "z": "3e9af0becd320233",
+        "name": "GET /cep/:cep",
+        "url": "/cep/:cep",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 110,
+        "y": 140,
+        "wires": [
+            [
+                "25a6cdd458383f46",
+                "ffc9aff2de42119a"
+            ]
+        ]
+    },
+    {
+        "id": "25a6cdd458383f46",
+        "type": "debug",
+        "z": "3e9af0becd320233",
+        "name": "Debug CEP Param",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "msg.req.params",
+        "targetType": "msg",
+        "x": 300,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "ffc9aff2de42119a",
+        "type": "function",
+        "z": "3e9af0becd320233",
+        "name": "Extrair e Limpar CEP",
+        "func": "// Extrair o CEP do parâmetro da rota\nlet cep = msg.req.params.cep;\n\n// Remover caracteres não numéricos (como traços e espaços)\ncep = cep.replace(/\\D/g, '');\n\n// Verificar se o CEP tem exatamente 8 caracteres\nif (cep.length !== 8) {\n    msg.statusCode = 400;\n    msg.payload = { error: 'CEP deve conter exatamente 8 caracteres.' };\n    return msg;\n}\n\n// Passar o CEP limpo para o próximo nó\nmsg.payload = cep;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 300,
+        "y": 180,
+        "wires": [
+            [
+                "644a9e6cfab4fb50",
+                "38e357bcc0a2fdec"
+            ]
+        ]
+    },
+    {
+        "id": "644a9e6cfab4fb50",
+        "type": "debug",
+        "z": "3e9af0becd320233",
+        "name": "Debug Payload CEP",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 560,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "38e357bcc0a2fdec",
+        "type": "http request",
+        "z": "3e9af0becd320233",
+        "name": "Chamada API BrazilAPI CEP",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://brasilapi.com.br/api/cep/v2/{{payload}}",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 600,
+        "y": 180,
+        "wires": [
+            [
+                "969ef85bdc120b30",
+                "1bc4aa727d17a83b"
+            ]
+        ]
+    },
+    {
+        "id": "969ef85bdc120b30",
+        "type": "debug",
+        "z": "3e9af0becd320233",
+        "name": "Debug Resposta API",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 860,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "1bc4aa727d17a83b",
+        "type": "function",
+        "z": "3e9af0becd320233",
+        "name": "Formatar Resposta CEP",
+        "func": "// Verificar se a resposta contém os dados esperados\nif (msg.payload && msg.payload.cep) {\n    msg.payload = {\n        cep: msg.payload.cep,\n        state: msg.payload.state, // Alterado para 'state'\n        city: msg.payload.city, // Alterado para 'city'\n        neighborhood: msg.payload.neighborhood, // Alterado para 'neighborhood'\n        street: msg.payload.street, // Alterado para 'street'\n        service: \"viacep\"\n    };\n} else {\n    msg.statusCode = 500;\n    msg.payload = { error: \"Dados não encontrados na resposta da API.\" };\n}\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 870,
+        "y": 180,
+        "wires": [
+            [
+                "6ef3563cdcafe3f2"
+            ]
+        ]
+    },
+    {
+        "id": "6ef3563cdcafe3f2",
+        "type": "http response",
+        "z": "3e9af0becd320233",
+        "name": "Enviar Resposta CEP",
+        "statusCode": "",
+        "headers": {},
+        "x": 1120,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "5c18f55d249bf598",
+        "type": "http in",
+        "z": "3e9af0becd320233",
+        "name": "GET /cep-search",
+        "url": "/cep-search",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 280,
+        "wires": [
+            [
+                "213ab8b3b748145e"
+            ]
+        ]
+    },
+    {
+        "id": "213ab8b3b748145e",
+        "type": "template",
+        "z": "3e9af0becd320233",
+        "name": "Página Formulário CEP",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "html",
+        "syntax": "html",
+        "template": "<!DOCTYPE html>\n<html>\n\n<head>\n    <title>Buscador de CEP</title>\n    <style>\n        body {\n            font-family: Arial, sans-serif;\n            margin: 20px;\n        }\n\n        h1 {\n            color: #333;\n        }\n\n        form {\n            margin-bottom: 20px;\n        }\n\n        input {\n            padding: 10px;\n            font-size: 16px;\n        }\n\n        button {\n            padding: 10px 20px;\n            font-size: 16px;\n        }\n\n        #resultado {\n            margin-top: 20px;\n        }\n    </style>\n</head>\n\n<body>\n    <h1>Buscador de CEP</h1>\n    <form id=\"cepForm\" onsubmit=\"buscarCep(event)\">\n        <input type=\"text\" id=\"cepInput\" placeholder=\"Digite o CEP\" required />\n        <button type=\"submit\">Buscar</button>\n    </form>\n    <div id=\"resultado\"></div>\n\n    <script>\n        function buscarCep(event) {\n            event.preventDefault(); // Evitar o envio do formulário padrão\n\n            const cep = document.getElementById('cepInput').value;\n\n            // Limpar o campo de resultado\n            document.getElementById('resultado').innerHTML = '';\n\n            // Validar o CEP antes de enviar (opcional)\n            const cepLimpo = cep.replace(/\\D/g, '');\n            if (cepLimpo.length !== 8) {\n                document.getElementById('resultado').innerHTML = '<p style=\"color:red;\">CEP deve conter exatamente 8 caracteres.</p>';\n                return;\n            }\n\n            // Fazer a requisição para o endpoint /cep/:cep\n            fetch(`/cep/${cepLimpo}`)\n                .then(response => {\n                    if (!response.ok) {\n                        return response.json().then(error => { throw error; });\n                    }\n                    return response.json();\n                })\n                .then(data => {\n                    // Exibir os dados de forma formatada\n                    const resultadoDiv = document.getElementById('resultado');\n                    if (data.error) {\n                        resultadoDiv.innerHTML = `<p style=\"color:red;\">Erro: ${data.error}</p>`;\n                    } else {\n                        resultadoDiv.innerHTML = `\n                            <p><strong>CEP:</strong> ${data.cep}</p>\n                            <p><strong>Estado:</strong> ${data.state}</p>\n                            <p><strong>Cidade:</strong> ${data.city}</p>\n                            <p><strong>Bairro:</strong> ${data.neighborhood}</p>\n                            <p><strong>Rua:</strong> ${data.street}</p>\n                            <p><strong>Serviço:</strong> ${data.service}</p>\n                        `;\n                    }\n                })\n                .catch(error => {\n                    document.getElementById('resultado').innerHTML = `<p style=\"color:red;\">Erro: ${error.error || 'Falha na requisição.'}</p>`;\n                });\n        }\n    </script>\n</body>\n\n</html>",
+        "x": 350,
+        "y": 280,
+        "wires": [
+            [
+                "3d42e34688183f97"
+            ]
+        ]
+    },
+    {
+        "id": "3d42e34688183f97",
+        "type": "http response",
+        "z": "3e9af0becd320233",
+        "name": "Enviar Página CEP Search",
+        "statusCode": "",
+        "headers": {},
+        "x": 640,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "http_in_test",
+        "type": "http in",
+        "z": "tab_test_api",
+        "name": "GET /test/:cep",
+        "url": "/test/:cep",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 90,
+        "y": 160,
+        "wires": [
+            [
+                "function_test_api"
+            ]
+        ]
+    },
+    {
+        "id": "function_test_api",
+        "type": "function",
+        "z": "tab_test_api",
+        "name": "Chamada API Teste",
+        "func": "msg.url = `https://brasilapi.com.br/api/cep/v2/{{req.params.cep}}`;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 290,
+        "y": 160,
+        "wires": [
+            [
+                "http_request_test_api"
+            ]
+        ]
+    },
+    {
+        "id": "http_request_test_api",
+        "type": "http request",
+        "z": "tab_test_api",
+        "name": "Chamada API BrazilAPI CEP Teste",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://brasilapi.com.br/api/cep/v2/{{req.params.cep}}",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 580,
+        "y": 160,
+        "wires": [
+            [
+                "debug_test_api",
+                "http_response_test_api"
+            ]
+        ]
+    },
+    {
+        "id": "debug_test_api",
+        "type": "debug",
+        "z": "tab_test_api",
+        "name": "Debug API Teste",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 630,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "http_response_test_api",
+        "type": "http response",
+        "z": "tab_test_api",
+        "name": "Enviar Resposta Teste",
+        "statusCode": "",
+        "headers": {},
+        "x": 940,
+        "y": 160,
+        "wires": []
+    }
+]
